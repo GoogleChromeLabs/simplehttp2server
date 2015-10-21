@@ -47,6 +47,7 @@ func main() {
 		listen      = flag.String("listen", ":5000", "Port to listen on")
 		http1       = flag.Bool("http1", false, "Serve via HTTP/1.1")
 		disableGzip = flag.Bool("nogzip", false, "Disable GZIP content compression")
+		cors        = flag.String("cors", "*", "Set allowed origins")
 	)
 	flag.Parse()
 
@@ -78,6 +79,8 @@ func main() {
 	}
 
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", *cors)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 		defer fs.ServeHTTP(w, r)
 		if *http1 {
