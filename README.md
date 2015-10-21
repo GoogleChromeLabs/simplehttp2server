@@ -1,4 +1,5 @@
 `simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
+This server is for development purposes only.
 
 # Push
 
