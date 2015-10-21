@@ -1,8 +1,9 @@
-`SimpleHttp2Server` serves the current directory on an HTTP/2.0 capable server.
+`simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
+
+# Push
 
 All requests will be looked up in a file named `push.json`. If there is a key
-for the request path, all resources in the array under that key will be pushed
-(see demo directory).
+for the request path, all resources in the array under that key will be pushed.
 
 Example `push.json`:
 
@@ -15,5 +16,23 @@ Example `push.json`:
 }
 ```
 
-If no certificate files (`cert.pem` and `key.pem`) are present,
-a self-signed certificate will be generated.
+Support for weighting those pushes is not yet implemented.
+
+# TLS Certificate
+
+Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
+`key.pem` are present. If not, a self-signed certificate will be generated.
+
+# Download
+
+`simplehttp2server` is `go get`-able:
+
+```
+$ go get github.com/GoogleChrome/simplehttp2server
+```
+
+Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
+
+# License
+
+Apache 2.
