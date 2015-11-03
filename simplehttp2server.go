@@ -57,7 +57,7 @@ func main() {
 		WriteTimeout: 1 * time.Minute,
 	}
 
-	pushMap := map[string][]string{}
+	pushMap := PushManifest{}
 	if !*http1 {
 		var err error
 		pushMap, err = readPushMap("push.json")
@@ -96,9 +96,10 @@ func main() {
 			log.Printf("Connection is not a pusher")
 			return
 		}
-		for _, pushee := range pushes {
-			log.Printf("Pushing %s", pushee)
-			pusher.Push("GET", pushee, http.Header{})
+		for key, pushInstruction := range pushes {
+			_ = pushInstruction // No use just yet
+			log.Printf("Pushing %s", key)
+			pusher.Push("GET", key, http.Header{})
 		}
 	})
 
@@ -230,7 +231,13 @@ func generateCertificates(host string) {
 	log.Print("written key.pem\n")
 }
 
-func readPushMap(filename string) (pm map[string][]string, err error) {
+type PushManifest map[string]map[string]PushInstruction
+type PushInstruction struct {
+	Type   string `json:"style"`
+	Weight int    `json:"weight"`
+}
+
+func readPushMap(filename string) (pm PushManifest, err error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
