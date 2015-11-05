@@ -1,19 +1,30 @@
 `simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
 This server is for development purposes only.
 
-# Push
+# Push Manifest
 
+`simplehttp2server` supports the [push manifest](https://www.npmjs.com/package/http2-push-manifest).
 All requests will be looked up in a file named `push.json`. If there is a key
-for the request path, all resources in the array under that key will be pushed.
+for the request path, all resources under that key will be pushed.
 
 Example `push.json`:
 
 ```JS
 {
-  "/": [
-    "/banner.jpg",
-    "styles.css"
-  ]
+  "index.html": {
+    "/css/app.css": {
+      "type": "style",
+      "weight": 1
+    },
+    // ...
+  },
+  "page.html": {
+    "/css/page.css": {
+      "type": "style",
+      "weight": 1
+    },
+    // ...
+  }
 }
 ```
 
