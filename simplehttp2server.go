@@ -80,7 +80,7 @@ func main() {
 
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PUT, POST, DELETE")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 		defer fs.ServeHTTP(w, r)
 		if *http1 {
