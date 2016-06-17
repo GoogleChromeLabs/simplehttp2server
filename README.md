@@ -35,12 +35,23 @@ Support for weighting those pushes is not yet implemented.
 Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
 `key.pem` are present. If not, a self-signed certificate will be generated.
 
-# Download
+# Download and Compile
 
 `simplehttp2server` is `go get`-able:
 
 ```
 $ go get github.com/GoogleChrome/simplehttp2server
+```
+
+This installs the Simplehttp2server source files in your Go work directory.
+
+## Compile on Mac
+
+After running the `go get` command as described above, change to the `simplehttp2server/` directory, then run `crosscompile.sh`.
+
+```
+cd github.com/GoogleChorme/simplehttp2server
+./crosscompile.sh
 ```
 
 Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
