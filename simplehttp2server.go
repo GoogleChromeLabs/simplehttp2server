@@ -114,7 +114,10 @@ func main() {
 
 	tlsListener := tls.NewListener(ln, server.TLSConfig)
 	tcl := tlsListener
-	log.Printf("Listening on %s...", *listen)
+	if strings.HasPrefix(*listen, ":") {
+		*listen = "localhost" + *listen
+	}
+	log.Printf("Listening on https://%s...", *listen)
 	if err := server.Serve(tcl); err != nil {
 		log.Fatalf("Error starting webserver: %s", err)
 	}
