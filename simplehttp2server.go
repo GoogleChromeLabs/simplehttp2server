@@ -25,9 +25,11 @@ import (
 	"io"
 	"log"
 	"math/big"
+	mrand "math/rand"
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +50,13 @@ var (
 	disableGzip  = flag.Bool("nogzip", false, "Disable GZIP content compression")
 	cors         = flag.String("cors", "*", "Set allowed origins")
 	pushManifest = flag.String("pushmanifest", "push.json", "File containing the push manifest")
+	minDelay     = flag.Int("mindelay", 0, "Minimum delay before a request in answered in milliseconds (ignored without -maxdelay)")
+	maxDelay     = flag.Int("maxdelay", 0, "Maximum delay before a request in answered in milliseconds")
 )
+
+func init() {
+	mrand.Seed(time.Now().Unix())
+}
 
 func main() {
 	flag.Parse()
@@ -78,6 +86,16 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
+
+		delay := 0
+		if *maxDelay >= *minDelay {
+			delay = mrand.Intn(*maxDelay-*minDelay) + *minDelay
+		}
+		if queryDelay := r.FormValue("delay"); queryDelay != "" {
+			delay, _ = strconv.Atoi(queryDelay)
+		}
+		time.Sleep(time.Duration(delay) * time.Millisecond)
+
 		defer fs.ServeHTTP(w, r)
 		if *http1 {
 			return
