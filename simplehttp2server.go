@@ -42,13 +42,15 @@ type PushResponseWriter struct {
 	http2.Pusher
 }
 
+var (
+	listen       = flag.String("listen", ":5000", "Port to listen on")
+	http1        = flag.Bool("http1", false, "Serve via HTTP/1.1")
+	disableGzip  = flag.Bool("nogzip", false, "Disable GZIP content compression")
+	cors         = flag.String("cors", "*", "Set allowed origins")
+	pushManifest = flag.String("pushmanifest", "push.json", "File containing the push manifest")
+)
+
 func main() {
-	var (
-		listen      = flag.String("listen", ":5000", "Port to listen on")
-		http1       = flag.Bool("http1", false, "Serve via HTTP/1.1")
-		disableGzip = flag.Bool("nogzip", false, "Disable GZIP content compression")
-		cors        = flag.String("cors", "*", "Set allowed origins")
-	)
 	flag.Parse()
 
 	server := &http.Server{
@@ -57,13 +59,7 @@ func main() {
 		WriteTimeout: 1 * time.Minute,
 	}
 
-	pushMap := PushManifest{}
 	if !*http1 {
-		var err error
-		pushMap, err = readPushMap("push.json")
-		if err != nil {
-			log.Printf("Error decoding push map: %s", err)
-		}
 		http2.ConfigureServer(server, &http2.Server{})
 	}
 
@@ -86,21 +82,7 @@ func main() {
 		if *http1 {
 			return
 		}
-		pushes, ok := pushMap[r.URL.Path]
-		if !ok {
-			log.Printf("No pushes defined for %s", r.URL.Path)
-			return
-		}
-		pusher, ok := w.(http2.Pusher)
-		if !ok {
-			log.Printf("Connection is not a pusher")
-			return
-		}
-		for key, pushInstruction := range pushes {
-			_ = pushInstruction // No use just yet
-			log.Printf("Pushing %s", key)
-			pusher.Push("GET", key, http.Header{})
-		}
+		pushResources(w, r)
 	})
 
 	if err := configureTLS(server); err != nil {
@@ -120,6 +102,33 @@ func main() {
 	log.Printf("Listening on https://%s...", *listen)
 	if err := server.Serve(tcl); err != nil {
 		log.Fatalf("Error starting webserver: %s", err)
+	}
+}
+
+func pushResources(w http.ResponseWriter, r *http.Request) {
+	pushMap, err := readPushMap(*pushManifest)
+	if err != nil {
+		log.Printf("Could not load push manifest \"%s\": %s", *pushManifest, err)
+		return
+	}
+	pushes, ok := pushMap[r.URL.Path]
+	if !ok {
+		log.Printf("No pushes defined for %s", r.URL.Path)
+		return
+	}
+	pusher, ok := w.(http2.Pusher)
+	if !ok {
+		log.Printf("Connection is not a pusher")
+		return
+	}
+	for key, pushInstruction := range pushes {
+		_ = pushInstruction // No use just yet
+		if key[0] != '/' {
+			log.Printf("Keys in the push manifest must start with '/'")
+			continue
+		}
+		log.Printf("Pushing %s", key)
+		pusher.Push("GET", key, http.Header{})
 	}
 }
 

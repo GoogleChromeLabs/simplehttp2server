@@ -11,14 +11,14 @@ Example `push.json`:
 
 ```JS
 {
-  "index.html": {
+  "/": {
     "/css/app.css": {
       "type": "style",
       "weight": 1
     },
     // ...
   },
-  "page.html": {
+  "/page.html": {
     "/css/page.css": {
       "type": "style",
       "weight": 1
