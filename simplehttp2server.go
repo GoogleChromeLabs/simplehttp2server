@@ -88,7 +88,7 @@ func main() {
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 
 		delay := 0
-		if *maxDelay >= *minDelay {
+		if *maxDelay > *minDelay {
 			delay = mrand.Intn(*maxDelay-*minDelay) + *minDelay
 		}
 		if queryDelay := r.FormValue("delay"); queryDelay != "" {
