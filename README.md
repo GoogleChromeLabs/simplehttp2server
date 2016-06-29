@@ -35,6 +35,15 @@ Support for weighting those pushes is not yet implemented.
 Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
 `key.pem` are present. If not, a self-signed certificate will be generated.
 
+# Delays
+
+`simplehttp2server` can add artifical delays to responses to emulate processing
+time. The command line flags `-mindelay` and `-maxdelay` allow you to delay
+responses with a random delay form the interval `[minDelay, maxDelay]`.
+
+If a request has a `delay` query parameter (like `GET /index.html?delay=4000`),
+that delay will take precedence.
+
 # Download
 
 `simplehttp2server` is `go get`-able:
