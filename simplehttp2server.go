@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/big"
 	mrand "math/rand"
@@ -52,6 +53,7 @@ var (
 	pushManifest = flag.String("pushmanifest", "push.json", "File containing the push manifest")
 	minDelay     = flag.Int("mindelay", 0, "Minimum delay before a request in answered in milliseconds (ignored without -maxdelay)")
 	maxDelay     = flag.Int("maxdelay", 0, "Maximum delay before a request in answered in milliseconds")
+	spa          = flag.String("spa", "", "Page to serve instead of 404")
 )
 
 func init() {
@@ -96,11 +98,25 @@ func main() {
 		}
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 
-		defer fs.ServeHTTP(w, r)
-		if *http1 {
-			return
+		if *spa != "" {
+			path := r.URL.Path
+			if _, err := os.Stat("." + path); err == nil {
+				fs.ServeHTTP(w, r)
+			} else {
+				spaContents, err := readSPAFile(*spa)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("Could not read SPA file: %s", err), http.StatusInternalServerError)
+					return
+				}
+				w.Write(spaContents)
+			}
+		} else {
+			fs.ServeHTTP(w, r)
 		}
-		pushResources(w, r)
+
+		if !*http1 {
+			pushResources(w, r)
+		}
 	})
 
 	if err := configureTLS(server); err != nil {
@@ -148,6 +164,15 @@ func pushResources(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Pushing %s", key)
 		pusher.Push("GET", key, http.Header{})
 	}
+}
+
+func readSPAFile(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ioutil.ReadAll(f)
 }
 
 type GzipResponseWriter struct {
