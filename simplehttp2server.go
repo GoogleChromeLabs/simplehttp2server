@@ -123,7 +123,7 @@ func main() {
 			fs.ServeHTTP(w, r)
 		}
 
-		if !*http1 {
+		if !*http1 && r.Header.Get("X-Is-Push") != "true" {
 			pushResources(w, r)
 		}
 	})
@@ -171,7 +171,10 @@ func pushResources(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		log.Printf("Pushing %s", key)
-		pusher.Push("GET", key, http.Header{})
+		// Add a X-Header to the pushed request so we don’t trigger pushes for pushes
+		pusher.Push("GET", key, http.Header{
+			"X-Is-Push": []string{"true"},
+		})
 	}
 }
 
