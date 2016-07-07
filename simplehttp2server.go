@@ -34,6 +34,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/efarrer/iothrottler"
+
 	// This is a temporary import!
 	// It is the same as golang.org/x/net/http2 with a patch by brk0v
 	// to expose the push functionality.
@@ -54,6 +56,7 @@ var (
 	minDelay     = flag.Int("mindelay", 0, "Minimum delay before a request in answered in milliseconds (ignored without -maxdelay)")
 	maxDelay     = flag.Int("maxdelay", 0, "Maximum delay before a request in answered in milliseconds")
 	spa          = flag.String("spa", "", "Page to serve instead of 404")
+	throttle     = flag.Int("throttle", 0, "Maximum throughput of network in kbps (0 = no limit)")
 )
 
 func init() {
@@ -88,6 +91,12 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
+
+		if *throttle != 0 {
+			trw := NewThrottledResponseWriter(w, iothrottler.Bandwidth(*throttle)*iothrottler.Kbps)
+			defer trw.Free()
+			w = trw
+		}
 
 		delay := 0
 		if *maxDelay > *minDelay {
@@ -182,6 +191,36 @@ type GzipResponseWriter struct {
 
 func (gzw GzipResponseWriter) Write(b []byte) (int, error) {
 	return gzw.WriteCloser.Write(b)
+}
+
+type ThrottledResponseWriter struct {
+	http2.Pusher
+	io.Writer
+	http.ResponseWriter
+	p *iothrottler.IOThrottlerPool
+}
+
+func (trw ThrottledResponseWriter) Write(b []byte) (int, error) {
+	return trw.Writer.Write(b)
+}
+
+func (trw ThrottledResponseWriter) Free() {
+	trw.p.ReleasePool()
+}
+
+func NewThrottledResponseWriter(w http.ResponseWriter, bw iothrottler.Bandwidth) ThrottledResponseWriter {
+	p := iothrottler.NewIOThrottlerPool(bw)
+	tw, _ := p.AddWriter(NopWriteCloser{w})
+	pusher, _ := w.(http2.Pusher)
+	return ThrottledResponseWriter{pusher, tw, w, p}
+}
+
+type NopWriteCloser struct {
+	io.Writer
+}
+
+func (nwc NopWriteCloser) Close() error {
+	return nil
 }
 
 var (
