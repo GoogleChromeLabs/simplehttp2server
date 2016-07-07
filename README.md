@@ -28,7 +28,7 @@ Example `push.json`:
 }
 ```
 
-Support for weighting those pushes is not yet implemented.
+Support for `weigth` and `type` is not implemented yet. Pushes cannot trigger additional pushes.
 
 # TLS Certificate
 
