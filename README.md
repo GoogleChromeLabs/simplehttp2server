@@ -39,10 +39,15 @@ Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
 
 `simplehttp2server` can add artifical delays to responses to emulate processing
 time. The command line flags `-mindelay` and `-maxdelay` allow you to delay
-responses with a random delay form the interval `[minDelay, maxDelay]`.
+responses with a random delay form the interval `[minDelay, maxDelay]` in milliseconds.
 
 If a request has a `delay` query parameter (like `GET /index.html?delay=4000`),
 that delay will take precedence.
+
+# Other features
+
+* Support for serving Single Page Applications (SPAs) using the `-spa` flag
+* Support for throttling network throughput *per reqest* using the `-throttle` flag
 
 # Download
 
