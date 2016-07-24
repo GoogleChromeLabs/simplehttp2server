@@ -28,7 +28,7 @@ Example `push.json`:
 }
 ```
 
-Support for `weigth` and `type` is not implemented yet. Pushes cannot trigger additional pushes.
+Support for `weight` and `type` is not implemented yet. Pushes cannot trigger additional pushes.
 
 # TLS Certificate
 
@@ -37,7 +37,7 @@ Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
 
 # Delays
 
-`simplehttp2server` can add artifical delays to responses to emulate processing
+`simplehttp2server` can add artificial delays to responses to emulate processing
 time. The command line flags `-mindelay` and `-maxdelay` allow you to delay
 responses with a random delay form the interval `[minDelay, maxDelay]` in milliseconds.
 
