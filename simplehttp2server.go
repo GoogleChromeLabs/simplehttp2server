@@ -80,10 +80,13 @@ func main() {
 	if !*disableGzip {
 		oldfs := fs
 		fs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Encoding", "gzip")
-			grw := GzipResponseWriter{gzip.NewWriter(w), w}
-			oldfs.ServeHTTP(grw, r)
-			grw.WriteCloser.Close()
+			if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+				w.Header().Set("Content-Encoding", "gzip")
+				grw := GzipResponseWriter{gzip.NewWriter(w), w}
+				defer grw.WriteCloser.Close()
+				w = grw
+			}
+			oldfs.ServeHTTP(w, r)
 		})
 	}
 
