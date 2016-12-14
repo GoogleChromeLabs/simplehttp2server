@@ -1,6 +1,23 @@
 `simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
 This server is for development purposes only.
 
+# Download
+
+`simplehttp2server` is `go get`-able:
+
+```
+$ go get github.com/GoogleChrome/simplehttp2server
+```
+
+Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
+
+You can also install `simplehttp2server` using brew if you are on macOS:
+
+```
+$ brew tap GoogleChrome/simplehttp2server https://github.com/GoogleChrome/simplehttp2server
+$ brew install simplehttp2server
+```
+
 # Push Manifest
 
 `simplehttp2server` supports the [push manifest](https://www.npmjs.com/package/http2-push-manifest).
@@ -48,16 +65,6 @@ that delay will take precedence.
 
 * Support for serving Single Page Applications (SPAs) using the `-spa` flag
 * Support for throttling network throughput *per reqest* using the `-throttle` flag
-
-# Download
-
-`simplehttp2server` is `go get`-able:
-
-```
-$ go get github.com/GoogleChrome/simplehttp2server
-```
-
-Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
 
 # License
 
