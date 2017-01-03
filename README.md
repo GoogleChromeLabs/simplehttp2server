@@ -3,6 +3,7 @@ This server is for development purposes only.
 
 # Download
 
+## Binaries 
 `simplehttp2server` is `go get`-able:
 
 ```
@@ -11,11 +12,19 @@ $ go get github.com/GoogleChrome/simplehttp2server
 
 Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
 
+## Brew
 You can also install `simplehttp2server` using brew if you are on macOS:
 
 ```
 $ brew tap GoogleChrome/simplehttp2server https://github.com/GoogleChrome/simplehttp2server
 $ brew install simplehttp2server
+```
+
+## Docker
+If you have Docker set up, you can serve the current directory via `simplehttp2server` using the following command:
+
+```
+$ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server
 ```
 
 # Push Manifest
