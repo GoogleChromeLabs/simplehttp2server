@@ -73,7 +73,7 @@ that delay will take precedence.
 # Other features
 
 * Support for serving Single Page Applications (SPAs) using the `-spa` flag
-* Support for throttling network throughput *per reqest* using the `-throttle` flag
+* Support for throttling network throughput *per request* using the `-throttle` flag
 
 # License
 
