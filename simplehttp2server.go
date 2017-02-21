@@ -12,29 +12,26 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"flag"
-	"fmt"
-	"io/ioutil"
 	"log"
-	mrand "math/rand"
 	"net"
 	"net/http"
-	"os"
+	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/http2"
+)
+
+const (
+	PushMarkerHeader = "X-Is-A-Push"
 )
 
 var (
-	listen       = flag.String("listen", ":5000", "Port to listen on")
-	cors         = flag.String("cors", "*", "Set allowed origins")
-	pushManifest = flag.String("pushmanifest", "push.json", "File containing the push manifest")
-	spa          = flag.String("spa", "", "Page to serve instead of 404")
+	listen   = flag.String("listen", ":5000", "Port to listen on")
+	cors     = flag.String("cors", "*", "Set allowed origins")
+	firebase = flag.String("firebase", "", "File containing a Firebase static hosting config")
 )
-
-func init() {
-	mrand.Seed(time.Now().Unix())
-}
 
 func main() {
 	flag.Parse()
@@ -44,34 +41,21 @@ func main() {
 		ReadTimeout:  1 * time.Minute,
 		WriteTimeout: 1 * time.Minute,
 	}
+	http2.ConfigureServer(server, &http2.Server{})
 
 	fs := http.FileServer(http.Dir("."))
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Detect and avoid recursive pushes
-		if r.Header.Get("X-Is-Push") != "true" {
-			pushResources(w, r)
-		}
-
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 
-		if *spa != "" {
-			path := r.URL.Path
-			if _, err := os.Stat("." + path); err == nil {
-				fs.ServeHTTP(w, r)
-			} else {
-				spaContents, err := readSPAFile(*spa)
-				if err != nil {
-					http.Error(w, fmt.Sprintf("Could not read SPA file: %s", err), http.StatusInternalServerError)
-					return
-				}
-				w.Write(spaContents)
-			}
-		} else {
-			fs.ServeHTTP(w, r)
+		if *firebase != "" {
+			processWithFirebase(w, r, *firebase)
 		}
-
+		if r.Header.Get(PushMarkerHeader) == "" {
+			pushResources(w, w.Header().Get("Link"))
+		}
+		fs.ServeHTTP(w, r)
 	})
 
 	if err := configureTLS(server); err != nil {
@@ -95,61 +79,29 @@ func main() {
 	}
 }
 
-func pushResources(w http.ResponseWriter, r *http.Request) {
-	pushMap, err := readPushMap(*pushManifest)
-	if err != nil {
-		log.Printf("Could not load push manifest \"%s\": %s", *pushManifest, err)
-		return
-	}
-	pushes, ok := pushMap[r.URL.Path]
-	if !ok {
-		log.Printf("No pushes defined for %s", r.URL.Path)
-		return
-	}
+func pushResources(w http.ResponseWriter, linkHeader string) {
+	parts := strings.Split(linkHeader, ",")
 	pusher, ok := w.(http.Pusher)
 	if !ok {
-		log.Printf("Connection is not a pusher")
+		log.Printf("ResponseWriter is not a Pusher. Not pushing anything")
 		return
 	}
-	for key, pushInstruction := range pushes {
-		_ = pushInstruction // No use just yet
-		if key[0] != '/' {
-			log.Printf("Keys in the push manifest must start with '/'")
+	for _, part := range parts {
+		if !strings.Contains(part, "rel=preload") {
 			continue
 		}
-		log.Printf("Pushing %s", key)
-		pusher.Push(key, &http.PushOptions{
+		resource := extractResourceFromLinkHeader(part)
+		pusher.Push(resource, &http.PushOptions{
 			Method: "GET",
 			Header: http.Header{
-				// Add a X-Header to the pushed request so we can avoid recursive pushing
-				"X-Is-Push": []string{"true"},
+				PushMarkerHeader: []string{"true"},
 			},
 		})
 	}
 }
 
-func readSPAFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return ioutil.ReadAll(f)
-}
+var extractionRegexp = regexp.MustCompile("<([^>]+>)")
 
-type PushManifest map[string]map[string]PushInstruction
-type PushInstruction struct {
-	Type   string `json:"style"`
-	Weight int    `json:"weight"`
-}
-
-func readPushMap(filename string) (pm PushManifest, err error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	dec := json.NewDecoder(f)
-	err = dec.Decode(&pm)
-	return
+func extractResourceFromLinkHeader(part string) string {
+	return extractionRegexp.FindStringSubmatch(part)[1]
 }
