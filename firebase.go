@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type FirebaseManifest struct {
@@ -19,15 +20,14 @@ type FirebaseManifest struct {
 		Source      string `json:"source"`
 		Destination string `json:"destination"`
 	} `json:"rewrites"`
-	Hosting struct {
+	Headers []struct {
+		Source  string `json:"source"`
 		Headers []struct {
-			Source  string `json:"source"`
-			Headers []struct {
-				Key   string `json:"key"`
-				Value string `json:"value"`
-			} `json:"headers"`
+			Key   string `json:"key"`
+			Value string `json:"value"`
 		} `json:"headers"`
-	} `json:"hosting"`
+	} `json:"headers"`
+	Hosting *FirebaseManifest `json:"Hosting"`
 }
 
 func (mf FirebaseManifest) processRedirects(w http.ResponseWriter, r *http.Request) (bool, error) {
@@ -41,6 +41,9 @@ func (mf FirebaseManifest) processRedirects(w http.ResponseWriter, r *http.Reque
 			return true, nil
 		}
 	}
+	if mf.Hosting != nil {
+		return mf.Hosting.processRedirects(w, r)
+	}
 	return false, nil
 }
 
@@ -51,26 +54,30 @@ func (mf FirebaseManifest) processRewrites(r *http.Request) error {
 			return fmt.Errorf("Invalid rewrite extglob %s: %s", rewrite.Source, err)
 		}
 		if pattern.MatchString(r.URL.Path) {
-			r.URL.Path = rewrite.Destination
+			r.URL.Path = strings.TrimSuffix(rewrite.Destination, "index.html")
 			return nil
 		}
 	}
-
+	if mf.Hosting != nil {
+		return mf.Hosting.processRewrites(r)
+	}
 	return nil
 }
 
 func (mf FirebaseManifest) processHosting(w http.ResponseWriter, r *http.Request) error {
-	for _, headerSet := range mf.Hosting.Headers {
+	for _, headerSet := range mf.Headers {
 		pattern, err := CompileExtGlob(headerSet.Source)
 		if err != nil {
 			return fmt.Errorf("Invalid hosting.header extglob %s: %s", headerSet.Source, err)
 		}
 		if pattern.MatchString(r.URL.Path) {
 			for _, header := range headerSet.Headers {
-				w.Header().Add(header.Key, header.Value)
+				w.Header().Set(header.Key, header.Value)
 			}
-			return nil
 		}
+	}
+	if mf.Hosting != nil {
+		return mf.Hosting.processHosting(w, r)
 	}
 	return nil
 }
@@ -106,6 +113,7 @@ func processWithFirebase(w http.ResponseWriter, r *http.Request, firebaseFile st
 		log.Printf("Processing rewrites failed: %s", err)
 		return dir
 	}
+
 	return dir
 }
 

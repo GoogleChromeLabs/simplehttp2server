@@ -43,23 +43,21 @@ $ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server
       "destination": "/index.html"
     }
   ],
-  "hosting": {
-    "headers": [
-      {
-        "source": "**.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          },
-          {
-            "key": "Link",
-            "value": "</header.jpg>; rel=preload; as=image"
-          }
-        ]
-      }
-    ]
-  }
+  "headers": [
+    {
+      "source": "**.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Link",
+          "value": "</header.jpg>; rel=preload; as=image"
+        }
+      ]
+    }
+  ]
 }
 ```
 
