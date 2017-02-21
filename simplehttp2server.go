@@ -19,8 +19,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"golang.org/x/net/http2"
 )
 
 const (
@@ -40,22 +38,25 @@ func main() {
 		Addr:         *listen,
 		ReadTimeout:  1 * time.Minute,
 		WriteTimeout: 1 * time.Minute,
+		TLSConfig: &tls.Config{
+			NextProtos:               []string{"h2", "h2-14"},
+			PreferServerCipherSuites: true,
+		},
 	}
-	http2.ConfigureServer(server, &http2.Server{})
 
-	fs := http.FileServer(http.Dir("."))
 	server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 
+		dir := "."
 		if *firebase != "" {
-			processWithFirebase(w, r, *firebase)
+			dir = processWithFirebase(w, r, *firebase)
 		}
 		if r.Header.Get(PushMarkerHeader) == "" {
-			pushResources(w, w.Header().Get("Link"))
+			pushResources(w)
 		}
-		fs.ServeHTTP(w, r)
+		http.FileServer(http.Dir(dir)).ServeHTTP(w, r)
 	})
 
 	if err := configureTLS(server); err != nil {
@@ -79,7 +80,8 @@ func main() {
 	}
 }
 
-func pushResources(w http.ResponseWriter, linkHeader string) {
+func pushResources(w http.ResponseWriter) {
+	linkHeader := w.Header().Get("Link")
 	parts := strings.Split(linkHeader, ",")
 	pusher, ok := w.(http.Pusher)
 	if !ok {
@@ -91,6 +93,11 @@ func pushResources(w http.ResponseWriter, linkHeader string) {
 			continue
 		}
 		resource := extractResourceFromLinkHeader(part)
+		if !strings.HasPrefix(resource, "/") {
+			log.Printf("--> Push attempt: Resource path needs to start with /")
+			continue
+		}
+		log.Printf("--> Push: %s", resource)
 		pusher.Push(resource, &http.PushOptions{
 			Method: "GET",
 			Header: http.Header{
@@ -100,7 +107,7 @@ func pushResources(w http.ResponseWriter, linkHeader string) {
 	}
 }
 
-var extractionRegexp = regexp.MustCompile("<([^>]+>)")
+var extractionRegexp = regexp.MustCompile("<([^>]+)>")
 
 func extractResourceFromLinkHeader(part string) string {
 	return extractionRegexp.FindStringSubmatch(part)[1]

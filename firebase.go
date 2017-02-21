@@ -9,6 +9,7 @@ import (
 )
 
 type FirebaseManifest struct {
+	Public    string `json:"public"`
 	Redirects []struct {
 		Source      string `json:"source"`
 		Destination string `json:"destination"`
@@ -74,33 +75,38 @@ func (mf FirebaseManifest) processHosting(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-func processWithFirebase(w http.ResponseWriter, r *http.Request, firebaseFile string) {
+func processWithFirebase(w http.ResponseWriter, r *http.Request, firebaseFile string) string {
+	dir := "."
 	mf, err := readManifest(firebaseFile)
 	if err != nil {
 		log.Printf("Could read Firebase file %s: %s", firebaseFile, err)
-		return
+		return dir
+	}
+	if mf.Public != "" {
+		dir = mf.Public
 	}
 
 	done, err := mf.processRedirects(w, r)
 	if err != nil {
 		log.Printf("Processing redirects failed: %s", err)
-		return
+		return dir
 	}
 	if done {
-		return
+		return dir
 	}
 
 	err = mf.processRewrites(r)
 	if err != nil {
 		log.Printf("Processing rewrites failed: %s", err)
-		return
+		return dir
 	}
 
 	err = mf.processHosting(w, r)
 	if err != nil {
 		log.Printf("Processing rewrites failed: %s", err)
-		return
+		return dir
 	}
+	return dir
 }
 
 func readManifest(path string) (FirebaseManifest, error) {
