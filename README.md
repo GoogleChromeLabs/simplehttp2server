@@ -1,9 +1,6 @@
-`simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
-This server is for development purposes only.
+`simplehttp2server` serves the current directory on an HTTP/2.0 capable server. This server is for development purposes only. `simplehttp2server` has partial, unofficial support for [Firebase’s JSON config]. Please see [disclaimer](#disclaimer) below.
 
-# Download
-
-## Binaries 
+## Binaries
 `simplehttp2server` is `go get`-able:
 
 ```
@@ -27,54 +24,58 @@ If you have Docker set up, you can serve the current directory via `simplehttp2s
 $ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server
 ```
 
-# Push Manifest
+## Config
 
-`simplehttp2server` supports the [push manifest](https://www.npmjs.com/package/http2-push-manifest).
-All requests will be looked up in a file named `push.json`. If there is a key
-for the request path, all resources under that key will be pushed.
+`simplehttp2server` has (partial) support for [Firebase’s JSON config]. This way you can add custom headers, rewrite rules and redirects. Here’s an example config:
 
-Example `push.json`:
-
-```JS
+```js
 {
-  "/": {
-    "/css/app.css": {
-      "type": "style",
-      "weight": 1
-    },
-    // ...
-  },
-  "/page.html": {
-    "/css/page.css": {
-      "type": "style",
-      "weight": 1
-    },
-    // ...
+  "redirects": [
+    {
+      "source": "/send_me_somewhere",
+      "destination": "https://google.com",
+      "type": 301
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app/**",
+      "destination": "/index.html"
+    }
+  ],
+  "hosting": {
+    "headers": [
+      {
+        "source": "**.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Link",
+            "value": "</header.jpg>; rel=preload; as=image"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
-Support for `weight` and `type` is not implemented yet. Pushes cannot trigger additional pushes.
+For details see the [Firebase’s documentation][Firebase’s JSON config].
 
-# TLS Certificate
+## Disclaimer
 
-Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
-`key.pem` are present. If not, a self-signed certificate will be generated.
+I haven’t tested if the behavior of `simplehttp2server` _always_ matches the live server of Firebase, and some options (like `trailingSlash` and `cleanUrls`) are completely missing. Please open an issue if you find a discrepancy! The support is not offically endorsed by Firebase (yet 😜), so don’t rely on it!
 
-# Delays
+## HTTP/2 PUSH
 
-`simplehttp2server` can add artificial delays to responses to emulate processing
-time. The command line flags `-mindelay` and `-maxdelay` allow you to delay
-responses with a random delay form the interval `[minDelay, maxDelay]` in milliseconds.
-
-If a request has a `delay` query parameter (like `GET /index.html?delay=4000`),
-that delay will take precedence.
-
-# Other features
-
-* Support for serving Single Page Applications (SPAs) using the `-spa` flag
-* Support for throttling network throughput *per request* using the `-throttle` flag
+Any `Link` headers with `rel=preload` will be translated to a HTTP/2 PUSH, as is
+common practice on static hosting platforms and CDNs. See the example above.
 
 # License
 
 Apache 2.
+
+[Firebase’s JSON config]: https://firebase.google.com/docs/hosting/full-config
