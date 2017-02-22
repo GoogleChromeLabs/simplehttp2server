@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -102,10 +103,13 @@ func processWithConfig(w http.ResponseWriter, r *http.Request, config string) st
 		return dir
 	}
 
-	err = mf.processRewrites(r)
-	if err != nil {
-		log.Printf("Processing rewrites failed: %s", err)
-		return dir
+	// Rewrites only happen if the target file does not exist
+	if _, err = os.Stat(filepath.Join(dir, r.URL.Path)); err != nil {
+		err = mf.processRewrites(r)
+		if err != nil {
+			log.Printf("Processing rewrites failed: %s", err)
+			return dir
+		}
 	}
 
 	err = mf.processHosting(w, r)
