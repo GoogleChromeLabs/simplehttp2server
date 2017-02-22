@@ -26,9 +26,9 @@ const (
 )
 
 var (
-	listen   = flag.String("listen", ":5000", "Port to listen on")
-	cors     = flag.String("cors", "*", "Set allowed origins")
-	firebase = flag.String("firebase", "", "File containing a Firebase static hosting config")
+	listen = flag.String("listen", ":5000", "Port to listen on")
+	cors   = flag.String("cors", "*", "Set allowed origins")
+	config = flag.String("config", "", "Config file")
 )
 
 func main() {
@@ -50,8 +50,8 @@ func main() {
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 
 		dir := "."
-		if *firebase != "" {
-			dir = processWithFirebase(w, r, *firebase)
+		if *config != "" {
+			dir = processWithConfig(w, r, *config)
 		}
 		if r.Header.Get(PushMarkerHeader) == "" {
 			pushResources(w)

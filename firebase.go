@@ -82,11 +82,11 @@ func (mf FirebaseManifest) processHosting(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-func processWithFirebase(w http.ResponseWriter, r *http.Request, firebaseFile string) string {
+func processWithConfig(w http.ResponseWriter, r *http.Request, config string) string {
 	dir := "."
-	mf, err := readManifest(firebaseFile)
+	mf, err := readManifest(config)
 	if err != nil {
-		log.Printf("Could read Firebase file %s: %s", firebaseFile, err)
+		log.Printf("Could read Firebase file %s: %s", config, err)
 		return dir
 	}
 	if mf.Public != "" {
