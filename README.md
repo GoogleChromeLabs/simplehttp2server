@@ -1,9 +1,9 @@
-`simplehttp2server` serves the current directory on an HTTP/2.0 capable server.
-This server is for development purposes only.
+`simplehttp2server` serves the current directory on an HTTP/2.0 capable server. This server is for development purposes only. `simplehttp2server` takes a JSON config that allows you to configure headers, redirects and URL rewrites in a lightweight JSON fromat.
 
-# Download
+The format is partially compatible with [Firebase’s JSON config]. Please see [disclaimer](#firebase-disclaimer) below.
 
-## Binaries 
+# Installation
+## Binaries
 `simplehttp2server` is `go get`-able:
 
 ```
@@ -24,57 +24,87 @@ $ brew install simplehttp2server
 If you have Docker set up, you can serve the current directory via `simplehttp2server` using the following command:
 
 ```
-$ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server
+$ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server [-config firebase.json]
 ```
 
-# Push Manifest
+# Config
 
-`simplehttp2server` supports the [push manifest](https://www.npmjs.com/package/http2-push-manifest).
-All requests will be looked up in a file named `push.json`. If there is a key
-for the request path, all resources under that key will be pushed.
+`simplehttp2server` can be configured with the `-config` flag and a JSON config file. This way you can add custom headers, rewrite rules and redirects. It is partially compatible with [Firebase’s JSON config].
 
-Example `push.json`:
+All `source` fields take the [Extglob] syntax.
 
-```JS
+## Redirects
+
+```js
 {
-  "/": {
-    "/css/app.css": {
-      "type": "style",
-      "weight": 1
-    },
-    // ...
-  },
-  "/page.html": {
-    "/css/page.css": {
-      "type": "style",
-      "weight": 1
-    },
-    // ...
-  }
+  "redirects": [
+    {
+      "source": "/**/.*",
+      "destination": "https://google.com",
+      "type": 301
+    }
+  ]
+```
+
+## Rewrites
+
+Rewrites are useful for SPAs, where all paths return `index.html` and the routing is taking care of in the app itself. Rewrites are only applied when the original target file does not exist.
+
+```js
+{
+  "rewrites": [
+    {
+      "source": "/app/**",
+      "destination": "/index.html"
+    }
+  ]
 }
 ```
 
-Support for `weight` and `type` is not implemented yet. Pushes cannot trigger additional pushes.
+## Headers
 
-# TLS Certificate
+```js
+{
+  "headers": [
+    {
+      "source": "/**.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Link",
+          "value": "</header.jpg>; rel=preload; as=image, </app.js>; rel=preload; as=script"
+        }
+      ]
+    }
+  ]
+}
+```
 
-Since HTTP/2 requires TLS, `simplehttp2server` checks if `cert.pem` and
-`key.pem` are present. If not, a self-signed certificate will be generated.
+For details see the [Firebase’s documentation][Firebase’s JSON config].
 
-# Delays
+## Firebase Disclaimer
 
-`simplehttp2server` can add artificial delays to responses to emulate processing
-time. The command line flags `-mindelay` and `-maxdelay` allow you to delay
-responses with a random delay form the interval `[minDelay, maxDelay]` in milliseconds.
+I haven’t tested if the behavior of `simplehttp2server` _always_ matches the live server of Firebase, and some options (like `trailingSlash` and `cleanUrls`) are completely missing. Please open an issue if you find a discrepancy! The support is not offically endorsed by Firebase (yet 😜), so don’t rely on it!
 
-If a request has a `delay` query parameter (like `GET /index.html?delay=4000`),
-that delay will take precedence.
+## HTTP/2 PUSH
 
-# Other features
-
-* Support for serving Single Page Applications (SPAs) using the `-spa` flag
-* Support for throttling network throughput *per request* using the `-throttle` flag
+Any `Link` headers with `rel=preload` will be translated to a HTTP/2 PUSH, [as is common practice on static hosting platforms and CDNs](https://w3c.github.io/preload/#server-push-http-2). See the [example](#headers) above.
 
 # License
 
 Apache 2.
+
+[Extglob]: https://www.npmjs.com/package/extglob
+[Firebase’s JSON config]: https://firebase.google.com/docs/hosting/full-config
