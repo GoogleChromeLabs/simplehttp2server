@@ -93,6 +93,9 @@ func processWithConfig(w http.ResponseWriter, r *http.Request, config string) st
 	if mf.Public != "" {
 		dir = mf.Public
 	}
+	if mf.Hosting != nil && mf.Hosting.Public != "" {
+		dir = mf.Hosting.Public
+	}
 
 	done, err := mf.processRedirects(w, r)
 	if err != nil {
