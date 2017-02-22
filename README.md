@@ -24,7 +24,7 @@ $ brew install simplehttp2server
 If you have Docker set up, you can serve the current directory via `simplehttp2server` using the following command:
 
 ```
-$ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server
+$ docker run -p 5000:5000 -v $PWD:/data surma/simplehttp2server [-config firebase.json]
 ```
 
 # Config
