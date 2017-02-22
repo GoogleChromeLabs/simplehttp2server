@@ -39,11 +39,12 @@ All `source` fields take the [Extglob] syntax.
 {
   "redirects": [
     {
-      "source": "/**/.*",
+      "source": "/shortlinks/a",
       "destination": "https://google.com",
       "type": 301
     }
   ]
+}
 ```
 
 ## Rewrites
