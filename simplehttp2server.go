@@ -14,11 +14,14 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/NYTimes/gziphandler"
 )
 
 const (
@@ -56,7 +59,18 @@ func main() {
 		if r.Header.Get(PushMarkerHeader) == "" {
 			pushResources(w)
 		}
-		http.FileServer(http.Dir(dir)).ServeHTTP(w, r)
+
+		// Add GZIP compression if it is a text-based format
+		fs := http.FileServer(http.Dir(dir))
+		typ := mime.TypeByExtension(r.URL.Path)
+		switch {
+		case strings.HasPrefix(typ, "text/"):
+		case typ == "application/xml":
+		case typ == "":
+			fs = gziphandler.GzipHandler(fs)
+		}
+
+		fs.ServeHTTP(w, r)
 	})
 
 	if err := configureTLS(server); err != nil {
