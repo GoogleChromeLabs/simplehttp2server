@@ -1,9 +1,9 @@
 class Simplehttp2server < Formula
   desc "SimpleHTTP2Server"
   homepage "https://github.com/GoogleChrome/simplehttp2server"
-  url "https://github.com/GoogleChrome/simplehttp2server/releases/download/3.0.1/simplehttp2server_darwin_amd64"
-  sha256 "3a090db3f9f52ec240329ff08ec9fe5e7b07b41c78d081eb8e46036360d4ce67"
-  version "3.0.1"
+  url "https://github.com/GoogleChrome/simplehttp2server/releases/download/3.1.0/simplehttp2server_darwin_amd64"
+  sha256 "5129bb9a75bbb58eafa96432b5fd9902394b918b1b18981596264a776341ec08"
+  version "3.1.0"
 
   def install
     system "chmod", "+x", "simplehttp2server_darwin_amd64"
