@@ -53,8 +53,12 @@ func main() {
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
 
 		dir := "."
+		redirected := false
 		if *config != "" {
-			dir = processWithConfig(w, r, *config)
+			dir, redirected = processWithConfig(w, r, *config)
+		}
+		if redirected {
+			return
 		}
 		if r.Header.Get(PushMarkerHeader) == "" {
 			pushResources(w)
@@ -102,8 +106,10 @@ func pushResources(w http.ResponseWriter) {
 		log.Printf("ResponseWriter is not a Pusher. Not pushing anything")
 		return
 	}
+	newParts := []string{}
 	for _, part := range parts {
 		if !strings.Contains(part, "rel=preload") {
+			newParts = append(newParts, part)
 			continue
 		}
 		resource := extractResourceFromLinkHeader(part)
@@ -119,6 +125,7 @@ func pushResources(w http.ResponseWriter) {
 			},
 		})
 	}
+	w.Header().Set("Link", strings.Join(newParts, ","))
 }
 
 var extractionRegexp = regexp.MustCompile("<([^>]+)>")

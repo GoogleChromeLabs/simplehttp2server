@@ -65,7 +65,7 @@ func (mf FirebaseManifest) processRewrites(r *http.Request) error {
 	return nil
 }
 
-func (mf FirebaseManifest) processHosting(w http.ResponseWriter, r *http.Request) error {
+func (mf FirebaseManifest) processHeaders(w http.ResponseWriter, r *http.Request) error {
 	for _, headerSet := range mf.Headers {
 		pattern, err := CompileExtGlob(headerSet.Source)
 		if err != nil {
@@ -78,17 +78,17 @@ func (mf FirebaseManifest) processHosting(w http.ResponseWriter, r *http.Request
 		}
 	}
 	if mf.Hosting != nil {
-		return mf.Hosting.processHosting(w, r)
+		return mf.Hosting.processHeaders(w, r)
 	}
 	return nil
 }
 
-func processWithConfig(w http.ResponseWriter, r *http.Request, config string) string {
+func processWithConfig(w http.ResponseWriter, r *http.Request, config string) (string, bool) {
 	dir := "."
 	mf, err := readManifest(config)
 	if err != nil {
 		log.Printf("Could read Firebase file %s: %s", config, err)
-		return dir
+		return dir, false
 	}
 	if mf.Public != "" {
 		dir = mf.Public
@@ -100,10 +100,10 @@ func processWithConfig(w http.ResponseWriter, r *http.Request, config string) st
 	done, err := mf.processRedirects(w, r)
 	if err != nil {
 		log.Printf("Processing redirects failed: %s", err)
-		return dir
+		return dir, false
 	}
 	if done {
-		return dir
+		return dir, true
 	}
 
 	// Rewrites only happen if the target file does not exist
@@ -111,17 +111,17 @@ func processWithConfig(w http.ResponseWriter, r *http.Request, config string) st
 		err = mf.processRewrites(r)
 		if err != nil {
 			log.Printf("Processing rewrites failed: %s", err)
-			return dir
+			return dir, false
 		}
 	}
 
-	err = mf.processHosting(w, r)
+	err = mf.processHeaders(w, r)
 	if err != nil {
 		log.Printf("Processing rewrites failed: %s", err)
-		return dir
+		return dir, false
 	}
 
-	return dir
+	return dir, false
 }
 
 func readManifest(path string) (FirebaseManifest, error) {
