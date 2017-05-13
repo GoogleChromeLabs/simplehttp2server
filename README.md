@@ -1,4 +1,4 @@
-`simplehttp2server` serves the current directory on an HTTP/2.0 capable server. This server is for development purposes only. `simplehttp2server` takes a JSON config that allows you to configure headers, redirects and URL rewrites in a lightweight JSON fromat.
+`simplehttp2server` serves the current directory on an HTTP/2.0 capable server. This server is for development purposes only. `simplehttp2server` takes a JSON config that allows you to configure headers, redirects and URL rewrites in a lightweight JSON format.
 
 The format is partially compatible with [Firebase’s JSON config]. Please see [disclaimer](#firebase-disclaimer) below.
 
