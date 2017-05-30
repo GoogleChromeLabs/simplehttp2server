@@ -8,5 +8,5 @@ for target in darwin:amd64 linux:amd64 linux:386 linux:arm windows:amd64; do
   if [ "$GOOS" = "windows" ]; then
     EXT=".exe"
   fi
-  bash -c "go build -ldflags "-s -w" -o $(basename $(echo $PWD))_${GOOS}_${GOARCH}${EXT} ."
+  bash -c "go build -ldflags \"-s -w\" -o $(basename $(echo $PWD))_${GOOS}_${GOARCH}${EXT} ."
 done
