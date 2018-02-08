@@ -67,7 +67,7 @@ func (c *globctx) compileExpression() error {
 			}
 		case '/':
 			if c.depth == 0 && (c.glob[c.pos:] == "/**" || strings.HasPrefix(c.glob[c.pos:], "/**/")) {
-				c.regexp = append(c.regexp, "(?:/[^/]*)*"...)
+				c.regexp = append(c.regexp, "(?:/.*)?"...)
 				c.pos += 3
 			} else {
 				c.regexp = append(c.regexp, '/')
@@ -168,12 +168,12 @@ func (c *globctx) compileEscapeSequence() error {
 }
 
 func (c *globctx) compileGlobstarPrefix() {
-	if c.glob == "**" {
-		c.regexp = append(c.regexp, "(?:[^/]+(?:/[^/]*)*)?"...)
-		return
-	}
 	for strings.HasPrefix(c.glob[c.pos:], "**/") {
-		c.regexp = append(c.regexp, "(?:[^/]+(?:/[^/]*)*/)?"...)
+		c.regexp = append(c.regexp, "(?:[^/].*/)?"...)
 		c.pos += 3
+	}
+	if c.glob[c.pos:] == "**" {
+		c.regexp = append(c.regexp, "(?:[^/].*)?"...)
+		c.pos += 2
 	}
 }
