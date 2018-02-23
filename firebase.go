@@ -33,7 +33,7 @@ type FirebaseManifest struct {
 
 func (mf FirebaseManifest) processRedirects(w http.ResponseWriter, r *http.Request) (bool, error) {
 	for _, redirect := range mf.Redirects {
-		pattern, err := CompileExtGlob(redirect.Source)
+		pattern, err := CompileExtGlob("/" + strings.TrimPrefix(redirect.Source, "/"))
 		if err != nil {
 			return false, fmt.Errorf("Invalid redirect extglob %s: %s", redirect.Source, err)
 		}
@@ -50,7 +50,7 @@ func (mf FirebaseManifest) processRedirects(w http.ResponseWriter, r *http.Reque
 
 func (mf FirebaseManifest) processRewrites(r *http.Request) error {
 	for _, rewrite := range mf.Rewrites {
-		pattern, err := CompileExtGlob(rewrite.Source)
+		pattern, err := CompileExtGlob("/" + strings.TrimPrefix(rewrite.Source, "/"))
 		if err != nil {
 			return fmt.Errorf("Invalid rewrite extglob %s: %s", rewrite.Source, err)
 		}
@@ -67,7 +67,7 @@ func (mf FirebaseManifest) processRewrites(r *http.Request) error {
 
 func (mf FirebaseManifest) processHeaders(w http.ResponseWriter, r *http.Request) error {
 	for _, headerSet := range mf.Headers {
-		pattern, err := CompileExtGlob(headerSet.Source)
+		pattern, err := CompileExtGlob("/" + strings.TrimPrefix(headerSet.Source, "/"))
 		if err != nil {
 			return fmt.Errorf("Invalid hosting.header extglob %s: %s", headerSet.Source, err)
 		}
