@@ -69,7 +69,9 @@ func main() {
 		typ := mime.TypeByExtension(r.URL.Path)
 		switch {
 		case strings.HasPrefix(typ, "text/"):
+			fallthrough
 		case typ == "application/xml":
+			fallthrough
 		case typ == "":
 			fs = gziphandler.GzipHandler(fs)
 		}
