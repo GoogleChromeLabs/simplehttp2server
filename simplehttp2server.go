@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/NYTimes/gziphandler"
 )
@@ -51,6 +52,17 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Origin", *cors)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTION, HEAD, PATCH, PUT, POST, DELETE")
 		log.Printf("Request for %s (Accept-Encoding: %s)", r.URL.Path, r.Header.Get("Accept-Encoding"))
+
+		// Add support for a "?delay" query parameter 
+		delayStr := r.URL.Query().Get("delay")
+        if delayStr != "" {
+            delay, err := strconv.Atoi(delayStr)
+            if err != nil {
+                http.Error(w, "Invalid delay parameter", http.StatusBadRequest)
+                return
+            }
+            time.Sleep(time.Duration(delay) * time.Millisecond)
+        }
 
 		dir := "."
 		redirected := false
