@@ -4,10 +4,10 @@ The format is partially compatible with [Firebase’s JSON config]. Please see [
 
 # Installation
 ## Binaries
-`simplehttp2server` is `go get`-able:
+`simplehttp2server` is `go install`-able:
 
 ```
-$ go get github.com/GoogleChrome/simplehttp2server
+$ go install github.com/GoogleChrome/simplehttp2server
 ```
 
 Precompiled binaries can be found in the [release section](https://github.com/GoogleChrome/simplehttp2server/releases).
